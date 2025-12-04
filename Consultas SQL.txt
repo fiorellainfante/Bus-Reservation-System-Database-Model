@@ -1,0 +1,79 @@
+1) Cantidad de servicios agrupados por empresa desde Rosario a Bariloche
+
+SELECT 
+    e.nombre AS empresa,
+    COUNT(s.id) AS cantidad_servicios
+FROM Empresa e
+JOIN Bus b 
+  ON b.id_empresa = e.id
+LEFT JOIN Servicio s
+  ON s.id_bus               = b.id
+  AND s.id_parada_origen    = (
+      SELECT p.id 
+      FROM Parada p
+      JOIN Ciudad c ON p.id_ciudad = c.id
+      WHERE c.nombre = 'Rosario'
+    )
+  AND s.id_parada_destino   = (
+      SELECT p.id 
+      FROM Parada p
+      JOIN Ciudad c ON p.id_ciudad = c.id
+      WHERE c.nombre = 'Bariloche'
+    )
+GROUP BY e.nombre;
+
+2) Listado de pasajeros frecuentes: los tres viajeros (apellido, nombre y cantidad de viajes) con más viajes en el último año
+
+SELECT 
+    c.apellido,
+    c.nombre,
+    COUNT(p.id) AS cantidad_viajes
+FROM Pasaje p
+JOIN Cliente c 
+  ON p.id_cliente = c.id
+WHERE p.fecha_emision 
+      BETWEEN DATE_SUB('2025-06-12', INTERVAL 1 YEAR) 
+          AND '2025-06-12'
+GROUP BY 
+    c.id, 
+    c.apellido, 
+    c.nombre
+ORDER BY 
+    cantidad_viajes DESC
+LIMIT 3;
+
+3) Servicios que aún no tienen reservas de asientos, indicando nombre de la empresa, fecha del viaje, origen y destino final
+
+SELECT
+  e.nombre             AS empresa,
+  s.fecha_salida       AS fecha_viaje,
+  corig.nombre         AS origen,
+  cdest.nombre         AS destino_final
+FROM Servicio s
+JOIN Bus b
+  ON s.id_bus = b.id
+JOIN Empresa e
+  ON b.id_empresa = e.id
+JOIN Parada porig
+  ON s.id_parada_origen = porig.id
+JOIN Ciudad corig
+  ON porig.id_ciudad = corig.id
+JOIN Parada pdest
+  ON s.id_parada_destino = pdest.id
+JOIN Ciudad cdest
+  ON pdest.id_ciudad = cdest.id
+LEFT JOIN Pasaje p
+  ON s.id = p.id_servicio
+WHERE p.id IS NULL
+ORDER BY s.fecha_salida;
+
+4) Listado de localidades que incluyan la palabra "monte", indicando la provincia a la que pertenecen
+
+SELECT
+  ci.nombre   AS localidad,
+  pr.nombre   AS provincia
+FROM Ciudad ci
+JOIN Provincia pr
+  ON ci.id_provincia = pr.id
+WHERE ci.nombre LIKE '%monte%';
+
